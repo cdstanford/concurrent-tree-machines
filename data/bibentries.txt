@@ -1,0 +1,6 @@
+===== Bib entries =====
+   1 @book
+   1 @article
+ 2 total
+===== By venue =====
+   1 Communications of the ACM,

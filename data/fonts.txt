@@ -1,0 +1,14 @@
+ type encoding emb sub uni object ID 
+ ----------------- ---------------- --- --- --- ---------  
+ SFRM1728 Type 1 Custom yes yes yes  0
+ SFRM1200 Type 1 Custom yes yes yes  0
+ SFBX1440 Type 1 Custom yes yes yes  0
+ SFBX1000 Type 1 Custom yes yes yes  0
+ SFRM1000 Type 1 Custom yes yes yes  0
+ SFTT1000 Type 1 Custom yes yes yes  0
+ SFBX1200 Type 1 Custom yes yes yes  0
+ CMMI10 Type 1 Builtin yes yes yes  0
+ SFBX0900 Type 1 Custom yes yes yes  0
+ SFRM0900 Type 1 Custom yes yes yes  0
+ SFTT0900 Type 1 Custom yes yes yes  0
+ SFTI1000 Type 1 Custom yes yes yes  0

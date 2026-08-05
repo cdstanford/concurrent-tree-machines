@@ -1,0 +1,22 @@
+     _           _       _ _
+ ___| |_ ___ ___| |_ ___|_| |_ ___ ___
+|  _|   | -_|  _| '_|  _| |  _| -_|_ -|
+|___|_|_|___|___|_,_|___|_|_| |___|___|
+
+checkcites.lua -- a reference checker script (v2.8)
+Copyright (c) 2012, 2019, Enrico Gregorio, Paulo Cereda
+Copyright (c) 2024, Enrico Gregorio, Island of TeX
+
+Great, I found 1 citation in 1 file. I also found 1 bibliography file. Let
+me check this file and extract the references. Please wait a moment.
+
+Fantastic, I found 2 references in 1 bibliography file. Please wait a
+moment while the report is generated.
+
+--------------------------------------------------------------------------
+Report of unused references in your TeX document (that is, references
+present in bibliography files, but not cited in the TeX source file)
+--------------------------------------------------------------------------
+
+Unused references in your TeX document: 1
+=> dean2008mapreduce

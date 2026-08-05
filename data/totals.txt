@@ -1,0 +1,7 @@
+===== Totals =====
+   words   chars file
+      15     254 src/main.tex
+      44     464 src/ref.bib
+     125    1633 src/header.tex
+     265    1996 src/help.tex
+     449    4347 total
