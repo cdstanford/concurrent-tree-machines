@@ -1,0 +1,261 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+
+\usepackage[margin=1.5in]{geometry}
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks   = true, % Colors links instead of ugly boxes
+  urlcolor     = blue, % Color for external hyperlinks
+  linkcolor    = blue, % Color of internal links
+  citecolor    = black % Color of citations
+}
+\usepackage{amssymb}
+\usepackage{amsmath,amsthm}
+\theoremstyle{definition}
+\newtheorem{thm}{Theorem}
+\newtheorem{prop}[thm]{Proposition}
+\newtheorem{defn}[thm]{Definition}
+\newtheorem{lem}[thm]{Lemma}
+\newtheorem{ex}[thm]{Example}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% TODO: add discussion of the different variants of branching model
+%% TODO: then look at some specific important examples, like checking
+% string equality or palindromes in O(n) and (harder) modeling memory access
+% a la RAM model.
+
+\title{Notes on a concurrent model of computation}
+\author{Caleb Stanford}
+\date{November 2021}
+
+\begin{document}
+
+\maketitle
+
+We investigate concurrent models of computation where, intuitively,
+the \emph{tape alphabet} and \emph{states} from Turing machines
+are merged into one data structure containing a collection of states,
+where each state updates at each timestep concurrently.
+The updates are simultaneous and in lock-step (i.e., synchronous concurrency).
+
+We hypothesize that a more elegant and computationally accurate model than
+Turing machines can be obtained as some variant of this proposal, i.e., physically accurate and not up-to-polytime complexity.
+In particular, we are after the following requirements:
+\begin{enumerate}
+\item The model should be Turing complete.
+\item The model should be able to simulate a Turing machine with constant blowup.
+\item The model should be able to simulate the RAM model with constant blowup.
+\item The model should admit a universal machine within the same model, in exactly the same manner as a universal Turing machine.
+\item The model should be more elgant than both Turing machines and the RAM model (though maybe not possible to be quite as elegant as, e.g., lambda calculus and SKI calculus).
+\end{enumerate}
+
+To model the RAM machine with quick access to a binary tree of memory, we believe that the binary branching model will be necessary. However, we begin
+our study by considering a 1-dimensional model which nevertheless generalizes Turing machines to behave concurrently in an elegant way.
+
+\paragraph{Related work:} It seems likely that the 1-dimensional model is known; it's a simple linear type of celular automaton. I hope that the binary-branching model is not known.
+
+\section{Linear-branching (1-dimensional) model}
+
+Let $\Sigma$ be a finite alphabet.
+A \emph{nondeterministic linear-branching machine} (NLBM)
+over $\Sigma$ consists of a tuple $(Q, \Delta, I, q_a, q_r)$, where:
+\begin{itemize}
+\item $Q$ is a finite set of states \emph{(analagous to a TM's tape alphabet)}, where $\Sigma \subseteq Q$ and also containing a special blank character $\bot \in Q$;
+\item $\Delta \subseteq Q \times Q \times Q \times Q$
+is a set of transitions ---
+for a transition $(q, q_1, q_2, q')$ we write
+$q \to^{q_1, q_2} q'$) ---
+such that if $\bot \to_{\bot, \bot} q'$ then $q' = \bot$;
+\item $I \subseteq Q$ is a set of initial states;
+\item $q_a \in Q$ is the accepting state; and
+\item $q_r$ is the rejecting state.
+\end{itemize}
+
+A \emph{configuration} of the machine is a singly-infinite tape of states:
+$c: \mathbb{N} \to Q$.
+A configuration is \emph{initial} if $c(0) \in I$,
+$c(1) \ldots c(n)$ contain the input word of length $n$ ($w \in \Sigma^n$),
+and $c(N) = \bot$ for $N > n$.
+On each update, each state on the tape updates in lock-step:
+$q \to^{q_1, q_2} q'$ means that if $(q_1, q, q_2)$ is a section
+of the tape (note: off the left end of the tape we assume an implicit $\bot$),
+the middle location (labeled $q$) may transition to $q'$.
+If \emph{any} state ever transitions to $q_a$, the run is immediately accepting; if it transitions to $q_r$, the run is immediately rejecting (either way, we say the run \emph{halts}).
+(If there are some states which accept and some which reject, let's say the left-most state wins the tie.)
+
+A branching machine is \emph{deterministic} (DLBM) if $|I| = 1$ and $\Delta$ is actually a function $\delta: Q \times Q \times Q \to Q$ (for each $q, q_1, q_2$ there is exactly one $q'$).
+If the machine is deterministic then it has exactly one run on any input word $w \in \Sigma^*$, though the run may be infinite.
+
+The \emph{time usage} for the run is the number of timesteps before it halts (or $\infty$ if it doesn't halt).
+The \emph{space usage} for the run is the number of locations on the tape that are not $\bot$ at any point during the run.
+The time or space usage of the machine on input string $w$ is the maximum
+over all possible runs, and the time or space usage on input length $n$ is the maximum over all possible input string $w$.
+The \emph{size} of the machine is the number of transitions $|\Delta|$.
+
+\begin{prop}[TM to LBM]
+Given a TM (respectively, NTM) $M$ there is an equivalent DLBM (respectively, NLBM) with (1) size polynomial in the size of $M$ and (2) space and time usage exactly matching the space and time usage of $M$ (possibly up to plus or minus $1$ depending on the executional semantics of TMs used).
+\end{prop}
+\begin{proof}
+$Q$ is the union of the state space of $M$ and the tape alphabet of $M$;
+the idea is to directly encode the transition semantics from one TM configuration to the next.
+At each configuration, exactly one location on the tape is a state (the head) and all
+others are tape alphabet symbols. At each concurrent update, the window
+on the tape right next to the head changes and everything else stays fixed.
+\end{proof}
+
+\begin{prop}[LBM to TM]
+Given a DLBM $M$ with size $z$, space usage $s$, and time usage $t$,
+there is an equivalent TM with (1) size polynomial in $z$, (2) space usage exactly matching $s$ (or possibly $s+1$ or $s+2$), and (3) time usage at most $s \cdot t$, i.e. \emph{quadratic} blowup.
+\end{prop}
+\begin{proof}
+We construct a TM $M'$ where the tape alphabet is equal to the state
+space of $M$.
+To simulate one timestep of $M$, the TM does one sweep across the tape
+(forward or backward).
+The start and end of the input must be marked.
+At each location it updates the tape according
+to the transition function of $M$.
+\end{proof}
+
+\begin{prop}
+Let $x \mapsto \langle x \rangle$ be a given binary encoding (serialization)
+procedure (for DLBMs, pairs, etc.).
+Given such an encoding procedure for DLBMs, there exists a universal DLBM
+$U$ such that
+$U$ on input $\langle M, w \rangle$ gives the result of $M$ on input $w$
+(if any), or runs forever if $M$ does not halt on $w$.
+Additionally, if $M$ has size $z$, space usage $s$, and time usage $t$ on input $w$, then:
+\begin{itemize}
+\item The size of $U$ is constant (obviously).
+\item The running time of $U$ on input $\langle M, w \rangle$ is $O(z \cdot t)$.
+\item The space usage of $U$ on input $\langle M, w \rangle$ is $O(z \cdot s)$.
+\end{itemize}
+\end{prop}
+\begin{proof}
+This is a bit harder but I believe roughly correct.
+As the linear model is not really as important as the binary model,
+I will omit a detailed analysis for now (maybe I am missing a small logarithmic factor or something like that).
+The idea is as follows:
+\begin{itemize}
+\item First pass, expand out the input so that each original input character
+corresponds to a \emph{block} of $k$ cells on the tape, for some fixed $k$.
+The block size must be large enough to store the state space of $M$ as
+well as the entire transition set of $M$.
+So $k$ should be $O(z)$.
+\item Second pass, execute in lock step, where each cell needs $O(k)$ steps to execute the transition function locally. The number of steps needs to be calculated up front.
+\end{itemize}
+\end{proof}
+
+\section{Binary-branching model}
+
+In the binary-branching model, states of the automaton can fork off into pairs of substates which operate concurrently; this makes a configuration of the automaton a binary tree (we model it as an infinite binary tree). Input comes in at the top of the tree. Each location in the tree updates its state at each timestep based on the state of its parent and two children (i.e. based on local context, similar to the unary branching model).
+
+\subsection{Notes on design choices}
+
+Important factors in the design of the update function include:
+
+\begin{description}
+\item[Input mechanism:]
+We must choose whether the input word comes in \emph{as} the top symbol, or as input to the transition function at the top, or as multiple characters at once (improving the potential running time to better-than-linear).
+
+\item[Accept/reject mechanism:]
+For compositionality I believe it is better that the accept/reject state must be at the top of the tree, and not anywhere (this also solves the problem of tiebreaking where one state might accept and another reject simultaneously).
+
+\item[Asymmetry:]
+We have to be careful to introduce asymmetry in the model.
+Originally, I wrote the transition function as $\Delta \subseteq Q \times Q \times Q \times Q \times Q$, but this does not allow
+the sub-states to be different, so the whole tree is just symmetric
+and equivalent to a line (at least in the deterministic case).
+To update its state, the child needs to know whether it is a left- or
+a right-child, in order to break the symmetry.
+
+\item[Up and down flow:]
+In order to have a working model we need information to be able to flow both upwards and downwards.
+\end{description}
+
+Considering these factors, the following are possible models for the transition function that I believe would work:
+\begin{itemize}
+\item (A) Separating the transitions into three groups, one for the
+top state, one for left-children, and one for right-children.
+This model has three functions $Q^4 \to Q$.
+\item (B) Separating the transition step into two steps: a fork step and a join step. The fork transition is $Q^3 \to Q^2$ (parent, child, child $\to$ child, child). The join transition is $Q^3 \to Q$ (parent, child, child $\to$ parent).
+At the top node, the join also joins the current input character.
+\item (C) Separating the transition step into two steps: an update and a merge.
+The update transition is $Q^3 \to Q^3$ (parent, child, child $\to$ parent, child, child). The merge transition is $Q^2 \to Q$ (new upper state, new lower state $\to$ new state). Similar to the fork-join model the new upper state at the top node in the tree is the current input character.
+\item Implicit merge: same as above but the merge $Q^2 \to Q$ is fixed as follows: if either state is $\bot$, return the other state, otherwise upper state takes precedence over lower state.
+\item Complex all-at-once transition: the transition function is $Q \times Q^2 \times Q^4 \to Q^2$ and looks at a parent, two children, and 4 grandchildren, returning the new two children. The top node of the tree isn't a state and is used for the current input character.
+\item Message-passing: first each state sends a message along its three edges: $Q \to Q^3$. Then each state updates using the messages it receives: $Q^4 \to Q$.
+\end{itemize}
+
+Of these, in my opinion the most elegant are the ones labeled (A), (B), and (C). The implicit merge requires additional understanding of the semantics and is not clean. The all-at-once applies cleanly but doesn't have a good accept/reject mechanism because the top state is not updated, and is also too many states as input ($Q^7$ ew). The message passing could be reasonable.
+
+In the current draft below, I use model (A), but I think models (B)/(C) are nice also. Only problem is the \emph{alternation}, the fact that the update function happens in two steps.
+Between (B) and (C) I don't have a strong preference but probably (B).
+
+\subsection{Definition}
+
+Let $\Sigma$ be a finite alphabet.
+A \emph{nondeterministic binary branching machine} (NBBM)
+over $\Sigma$ consists of a tuple $(Q, \Delta_T, \Delta_L, \Delta_R, I, q_a, q_r)$, where:
+\begin{itemize}
+\item $Q$ is a finite set of states \emph{(analagous to a TM's tape alphabet)}, where $\Sigma \subseteq Q$ and also containing a special blank character $\bot \in Q$;
+\item three sets of transitions, $\Delta_T \subseteq Q \times Q \times Q \times Q$, $\Delta_L \subseteq Q \times Q \times Q \times Q \times Q$, and $\Delta_R \subseteq Q \times Q \times Q \times Q \times Q$ ---
+for a transition $(q, q_1, q_2, q_3, q')$ we write
+$q \to^{q_1, q_2, q_3} q'$) ---
+such that if $\bot \to_{\bot, \bot, \bot} q'$ then $q' = \bot$;
+\item $I \subseteq Q$ is a set of initial states;
+\item $q_a \in Q$ is the accepting state; and
+\item $q_r$ is the rejecting state.
+\end{itemize}
+
+The branching machine has the following semantics.
+A \emph{configuration} is an infinite binary tree of states:
+formally a function $c: \{L, R\}^* \to Q$ assigning each path $p$ to a state.
+A valid initial configuration is one where $c(\epsilon) \in I$ and $c(p) = \bot$ for all $p \ne \epsilon$.
+On each update, the transition $q \to^{q_1, q_2, q_3} q'$ means that if a node in the tree has state $q$, parent $q_1$, and children $q_2$ and $q_3$, it can transition to $q'$. For the \emph{top} state in the tree, its parent is instead the characters in the input word, one at a time at each timestep, followed by blanks.
+If the top state evertransitions to $q_a$, the run is immediately accepting; if it transitions to $q_r$, the run is immediately rejecting (either way we say the run \emph{halts}).
+
+A branching machine is \emph{deterministic} (DBBM) if $|I| = 1$ and $\Delta$ is actually a function $\delta: Q \times Q \times Q \times Q \to Q$ (for each $q, q_1, q_2, q_3$ there is exactly one $q'$).
+If the machine is deterministic then it has exactly one run on any input word $w \in \Sigma^*$, though the run may be infinite.
+
+The \emph{time usage} for the run is the number of steps before it halts (or $\infty$ if it doesn't halt).
+The \emph{space usage} for the run is the number of nodes in the infinite binary tree that are non-$\bot$ at any point during the run.
+The \emph{size} of the machine is the number of transitions $|\Delta|$.
+
+\section{Conjectures}
+
+These are labeled as propositions but just conjectures for now.
+This will require a lot more thought.
+The model is elegant, but it's probably naive to believe everything will work out here.
+Still, it may be an interesting improvemenent on Turing machines and RAM machines.
+Note that in current form, the model is not adequate for sub-linear complexity classes as it requires at least time $O(n)$ to read the input.
+
+\begin{prop}
+This model is Turing-complete and preserves polynomial time.
+More precisely: (i) given a TM $M$ it can be converted to a NBBM accepting the same language with at most a polynomial blowup in program size, running time, and space usage; (ii) the same holds for decider TMs.
+(I think this one is true)
+Do these translations also preserve logspace reductions in the appropriate sense?
+\end{prop}
+
+\begin{prop}
+In the other direction, for any NBBM or DBBM there exists an equivalent NTM or DTM (respectively) with at most a polynomial blowup in cost.
+(Less sure -- probably false due to extreme concurrency in this model.)
+\end{prop}
+
+\begin{prop}
+There exists a "universal" DBBM/NBBM in the usual sense.
+(Totally uncertain about this one too. Where do you store the states and transitions?)
+\end{prop}
+
+\begin{prop}
+The RAM model can be encoded in this model.
+\end{prop}
+
+\begin{prop}
+Pick an interesting concurrent model of computation; that should also be able to be encoded.
+\end{prop}
+
+\end{document}
