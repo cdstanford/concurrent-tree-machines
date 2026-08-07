@@ -4,7 +4,7 @@
 
 \input{header}
 
-\title{Concurrent Tree Machines. Didn't I have a document on this before?}
+\title{Complexity from Tree Machines}
 \author{Caleb Stanford}
 \date{\today{}}
 
@@ -12,8 +12,120 @@
 
 \maketitle
 
-Maybe it is in Overleaf.
+\section{Tree Machines}
 
+\begin{definition}
+Let $\Sigma$ be a finite alphabet.
+A \emph{nondeterministic parallel tree machine} (NPTM)
+consists of a tuple $(Q, \Sigma, \Delta_L, \Delta_R, \Delta_T, I, q_a, q_r)$, where:
+\begin{itemize}
+\item $Q$ is a finite set of states \emph{(analagous to a TM's tape alphabet)}, with a distinguished blank character $\bot \in Q$.
+\item $\Sigma \subseteq Q$ is a special set of input symbols, not containing $\bot$.
+\item $\Delta_L, \Delta_R, \Delta_T \subseteq Q^5$ are sets of transitions ---
+for a transition $(q, q_1, q_2, q_3, q')$ we write
+$q \to^{q_1, q_2, q_3}_x q'$) where $x \in \{L, R, T\}$ ---
+such that if $\bot \to^{\bot, \bot, \bot} q'$ then $q' = \bot$.
+When $x$ is clear from the context or when a statement applies for any $x$, we may simply write $q \to^{q_1, q_2, q_3} q'$.
+\item $I \subseteq Q$ is a set of initial states.
+\item $q_a, q_r \in Q$ are the accepting state and rejecting state.
+\end{itemize}
+\end{definition}
+
+\paragraph*{Semantics.} The parallel tree machine has the following semantics.
+A \emph{configuration} is an infinite binary tree of states:
+formally a function $c: \{L, R\}^* \to Q$ assigning each path $p$ to a state.
+A valid initial configuration is one where $c(\epsilon) \in I$ and $c(p) = \bot$ for all $p \ne \epsilon$.
+The transitions $\Delta_L$ are used for left-children, the transitions $\Delta_R$ for right-children, and $\Delta_T$ for the \emph{top} state in the tree ($c(\epsilon)$).
+On each update for $x \in \{L, R, T\}$, the corresponding transition $q \to^{q_1, q_2, q_3}_x q'$ means that if a node in the tree has state $q$, parent $q_1$, and children $q_2$ and $q_3$, it can transition to $q'$. For the state in the tree, its parent is instead the characters in the input word, one at a time at each timestep, followed by blanks.
+If the top state ever transitions to $q_a$, the run is immediately accepting; if it transitions to $q_r$, the run is immediately rejecting; either way we say the run \emph{halts}.
+A state $q \ne \bot$ is called \emph{active}, other states are \emph{inactive}.
+
+\paragraph*{Language.}
+The \emph{language} of the machine is the set of strings in $\Sigma^*$ (read one character at a time as input, followed by blank symbols)
+such that the machine eventually terminates in an accepting state on at least one run.
+
+\paragraph*{Deterministic machines.}
+A \emph{deterministic parallel tree machine} (DPTM) is one where $|I| = 1$ and $\Delta$ is actually a function $\delta: Q \times Q \times Q \times Q \to Q$ (for each $q, q_1, q_2, q_3$ there is exactly one $q'$).
+If the machine is deterministic then it has exactly one run on any input word $w \in \Sigma^*$, though the run may be infinite.
+
+\paragraph*{Complexity metrics.}
+The \emph{time usage} for the run ($t \ge 0$) is the exact number of steps before it halts, or $\infty$ if the run is infinite.
+The \emph{space usage} for the run ($s \ge 1$ for halting runs) is the number of nodes in the infinite binary tree that are non-$\bot$ at any point during the run (note that they need not all be non-$\bot$ simultaneously),
+or $\infty$ if the run is infinite and infinitely many nodes are at some point active.
+The \emph{size} of the machine ($z \ge 1$ for machines with at least one run) is the number of transitions $|\Delta| + |I|$, and
+the \emph{state complexity} is $|Q|$.
+The \emph{description size} is the length of the full machine description written in binary (roughly proportional to the size multiplied by the log of the state complexity).
+The \emph{worst-case} (time or space) usage over inputs of length $n$ is the maximum (time or space) usage among runs over all inputs of length $n$, assuming that all such runs halt, and $\infty$ otherwise.
+
+\section{Complexity classes}
+
+\begin{definition}
+A (deterministic) NPTM with state complexity $m$, size $n$, worst case time usage $t(n)$, and worst case space usage $s(n)$ on input $n$ is said to be of complexity type $(m, n, t(n), s(n))$.
+
+Given $(m, n, t(n), s(n))$, where $m, n, t(n), s(n)$ may be $\infty$, the class of languages that can be recognized by some NPTM (resp. DPTM) with complexity type $(m', n', t'(n), s'(n)) \le (m, n, t(n), s(n))$ pointwise is denoted
+\[
+N(m, n, t(n), s(n)) \quad \text{resp.} \quad D(m, n, t(n), s(n))
+\]
+
+Given an infinite lower cut $C$ of ordered qaudruples $(m, n, t(n), s(n))$,
+i.e. a downward-closed subset of such ordered quadruples (ordered by $\le$ pointwise), we define $N$ and $D$ as
+\[
+N(C) := \bigcup_{\tau \in C} N(\tau) \quad \text{resp.} \quad D(C) := \bigcup_{\tau \in C} D(\tau).
+\]
+\end{definition}
+
+\begin{definition}
+Some special cases:
+\begin{itemize}
+\item \todo{Todo}
+\end{itemize}
+
+\end{definition}
+
+\section{Transducers (allowing output)}
+
+We now need a reduction mechanism to reduce from one complexity class to another.
+
+We define a
+\emph{nondeterministic parallel tree transducer} (NPTT) and \emph{deterministic parallel tree transducer} (DPTT) in exactly the same way as NPTMs, but
+allow a separate set of output transitions $\Delta_O \subseteq Q^5$ which is applied at the top node of the tree; equivalently one can use $\Delta_T \subseteq Q^6$ to encode this.
+If in addition to the regular DPTM requirements the $\Delta_O$ is also deterministic, then the machine is a DPTT.
+Similarly, $m$ multiple input signals and $n$ multiple output signals can be encoded with $\Delta_T \subseteq Q^{4 + m + n}$; such a machine is an $(m, n)$-NPTT or $(m, n)$-DPTT in the special case.
+
+\section{Conjectures}
+
+\todo{Old conjectures; update or incorporate.}
+
+These are labeled as propositions but just conjectures for now.
+This will require a lot more thought.
+The model is elegant, but it's probably naive to believe everything will work out here.
+Still, it may be an interesting improvemenent on Turing machines and RAM machines.
+Note that in current form, the model is not adequate for sub-linear complexity classes as it requires at least time $O(n)$ to read the input.
+
+\begin{proposition}
+This model is Turing-complete and preserves polynomial time.
+More precisely: (i) given a TM $M$ it can be converted to a NBBM accepting the same language with at most a polynomial blowup in program size, running time, and space usage; (ii) the same holds for decider TMs.
+(I think this one is true)
+Do these translations also preserve logspace reductions in the appropriate sense?
+\end{proposition}
+
+\begin{proposition}
+In the other direction, for any NBBM or DBBM there exists an equivalent NTM or DTM (respectively) with at most a polynomial blowup in cost.
+(Less sure -- probably false due to extreme concurrency in this model.)
+\end{proposition}
+
+\begin{proposition}
+There exists a "universal" DBBM/NBBM in the usual sense.
+(Totally uncertain about this one too. Where do you store the states and transitions?)
+\end{proposition}
+
+\begin{proposition}
+The RAM model can be encoded in this model.
+\end{proposition}
+
+\begin{proposition}
+Pick an interesting concurrent model of computation; that should also be able to be encoded.
+\end{proposition}
 % \input{help}
 
 \bibliographystyle{plain}
