@@ -24,10 +24,10 @@ consists of a tuple $(Q, \Sigma, \Delta_L, \Delta_R, \Delta_T, I, q_a, q_r)$, wh
 \item $\Delta_L, \Delta_R, \Delta_T \subseteq Q^5$ are sets of transitions ---
 for a transition $(q, q_1, q_2, q_3, q')$ we write
 $q \to^{q_1, q_2, q_3}_x q'$) where $x \in \{L, R, T\}$ ---
-such that if $\bot \to^{\bot, \bot, \bot} q'$ then $q' = \bot$.
+such that if $\bot \to^{\bot, \bot, \bot}_x q'$ then $q' = \bot$.
 When $x$ is clear from the context or when a statement applies for any $x$, we may simply write $q \to^{q_1, q_2, q_3} q'$.
 \item $I \subseteq Q$ is a set of initial states.
-\item $q_a, q_r \in Q$ are the accepting state and rejecting state.
+\item $q_a, q_r \in Q$ are the accepting state and rejecting state. We assume $q_a \ne q_r$.
 \end{itemize}
 \end{definition}
 
@@ -49,25 +49,28 @@ A \emph{deterministic parallel tree machine} (DPTM) is one where $|I| = 1$ and $
 If the machine is deterministic then it has exactly one run on any input word $w \in \Sigma^*$, though the run may be infinite.
 
 \paragraph*{Complexity metrics.}
-The \emph{time usage} for the run ($t \ge 0$) is the exact number of steps before it halts, or $\infty$ if the run is infinite.
-The \emph{space usage} for the run ($s \ge 1$ for halting runs) is the number of nodes in the infinite binary tree that are non-$\bot$ at any point during the run (note that they need not all be non-$\bot$ simultaneously),
+\begin{itemize}
+\item The \emph{time usage} for the run ($t \ge 0$) is the exact number of steps before it halts, or $\infty$ if the run is infinite.
+\item The \emph{space usage} for the run ($s \ge 1$ for halting runs) is the number of nodes in the infinite binary tree that are non-$\bot$ at any point during the run (note that they need not all be non-$\bot$ simultaneously),
 or $\infty$ if the run is infinite and infinitely many nodes are at some point active.
-The \emph{size} of the machine ($z \ge 1$ for machines with at least one run) is the number of transitions $|\Delta| + |I|$, and
-the \emph{state complexity} is $|Q|$.
-The \emph{description size} is the length of the full machine description written in binary (roughly proportional to the size multiplied by the log of the state complexity).
+\item The \emph{size} of the machine ($z \ge 1$ for machines with at least one run) is the number of states plus transitions: $|Q| + |\Delta| + |I|$.
+\item The \emph{state complexity} is $|Q|$.
+\item The \emph{description length} is the length of the full machine description written in binary: for a machine with $n$ states encoded as $0, \ldots, n - 1$, as it takes $O(\log n)$ to write each state and edge, this is bounded by $O(z \log n)$ where $n$ is the state complexity and $z$ is the size.
+\end{itemize}
+
 The \emph{worst-case} (time or space) usage over inputs of length $n$ is the maximum (time or space) usage among runs over all inputs of length $n$, assuming that all such runs halt, and $\infty$ otherwise.
 
 \section{Complexity classes}
 
 \begin{definition}
-A (deterministic) NPTM with state complexity $m$, size $n$, worst case time usage $t(n)$, and worst case space usage $s(n)$ on input $n$ is said to be of complexity type $(m, n, t(n), s(n))$.
+A (deterministic) NPTM with size $M$, state complexity $N$, worst case time usage $t(n)$, and worst case space usage $s(n)$ on inputs of length $n$ is said to be of \emph{complexity type} $(M, N, t(n), s(n))$.
 
-Given $(m, n, t(n), s(n))$, where $m, n, t(n), s(n)$ may be $\infty$, the class of languages that can be recognized by some NPTM (resp. DPTM) with complexity type $(m', n', t'(n), s'(n)) \le (m, n, t(n), s(n))$ pointwise is denoted
+Given $(M, N, t(n), s(n))$, where $M, N, t(n), s(n)$ may be $\infty$, the class of languages that can be recognized by some NPTM (resp. DPTM) with complexity type $(M', N', t'(n), s'(n)) \le (M, N, t(n), s(n))$ pointwise is denoted
 \[
-N(m, n, t(n), s(n)) \quad \text{resp.} \quad D(m, n, t(n), s(n))
+N(M, N, t(n), s(n)) \quad \text{resp.} \quad D(M, N, t(n), s(n))
 \]
 
-Given an infinite lower cut $C$ of ordered qaudruples $(m, n, t(n), s(n))$,
+Given an infinite lower cut $C$ of ordered qaudruples $(M, N, t(n), s(n))$,
 i.e. a downward-closed subset of such ordered quadruples (ordered by $\le$ pointwise), we define $N$ and $D$ as
 \[
 N(C) := \bigcup_{\tau \in C} N(\tau) \quad \text{resp.} \quad D(C) := \bigcup_{\tau \in C} D(\tau).
@@ -82,15 +85,29 @@ Some special cases:
 
 \end{definition}
 
-\section{Transducers (allowing output)}
+\section{Reductions: Tree Transducers}
 
-We now need a reduction mechanism to reduce from one complexity class to another.
+We will need a reduction mechanism to reduce from one complexity class to another.
 
 We define a
 \emph{nondeterministic parallel tree transducer} (NPTT) and \emph{deterministic parallel tree transducer} (DPTT) in exactly the same way as NPTMs, but
 allow a separate set of output transitions $\Delta_O \subseteq Q^5$ which is applied at the top node of the tree; equivalently one can use $\Delta_T \subseteq Q^6$ to encode this.
 If in addition to the regular DPTM requirements the $\Delta_O$ is also deterministic, then the machine is a DPTT.
 Similarly, $m$ multiple input signals and $n$ multiple output signals can be encoded with $\Delta_T \subseteq Q^{4 + m + n}$; such a machine is an $(m, n)$-NPTT or $(m, n)$-DPTT in the special case.
+
+Where not otherwise specified, generally reductions will be DPTMs.
+
+\section{Simulations}
+
+\todo{RAM model and comparison; TM comparison (easier); conversion to binary alphabet. Most conversions would be up to log factors.}
+
+% The following is a plausible result -- a similar result was proven by XYZ and ABC, possibly for a slightly different model:
+
+% \begin{conjecture}
+
+% \end{conjecture}
+
+
 
 \section{Conjectures}
 
